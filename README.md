@@ -1,1 +1,1 @@
-# kids-trivia
+# kids-canada-trivia
