@@ -180,10 +180,14 @@ function showQuestion() {
   hide('next-btn');
   const grid = document.getElementById('options-grid');
   grid.innerHTML = q.options.map(o => `
-    <label class="radio-option" data-value="${escHtml(o)}" onclick="submitAnswer(${JSON.stringify(o)})">
-      <input type="radio" name="q-answer" value="${escHtml(o)}">
+    <label class="radio-option" data-value="${escHtml(o)}">
+      <input type="radio" name="q-answer">
       <span>${escHtml(o)}</span>
     </label>`).join('');
+  grid.onclick = e => {
+    const lbl = e.target.closest('.radio-option');
+    if (lbl) submitAnswer(lbl.dataset.value);
+  };
 
   startTimer();
 }
