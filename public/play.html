@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play – Canada Trivia</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── Join Screen ────────────────────────────────────────────────────────── -->
+<div id="join-screen" class="center">
+  <div class="card">
+    <div class="logo">🍁 Canada <span>Trivia</span></div>
+    <p class="subtitle">Join a Game</p>
+
+    <div class="input-group">
+      <input type="text" id="room-code" class="code-input"
+             placeholder="ROOM CODE" maxlength="6" autocomplete="off"
+             oninput="this.value=this.value.toUpperCase()">
+      <input type="text" id="player-name" placeholder="Your nickname" maxlength="20">
+    </div>
+    <button class="btn btn-red" onclick="joinRoom()">Join!</button>
+    <a href="index.html" class="btn btn-outline mt-12">Back</a>
+  </div>
+</div>
+
+<!-- ── Waiting Lobby ──────────────────────────────────────────────────────── -->
+<div id="waiting-screen" class="center hidden">
+  <div class="card">
+    <div class="room-code">
+      <div class="label">Room Code</div>
+      <div class="code" id="wait-code">------</div>
+    </div>
+    <div class="waiting-anim">⏳</div>
+    <h2 style="margin:16px 0 8px; font-size:1.3rem;">You're in!</h2>
+    <p style="color:#6b7280; margin-bottom:20px;">Waiting for the host to start…</p>
+
+    <div class="players-section">
+      <h3>Players (<span id="wait-player-count">0</span>)</h3>
+      <ul class="player-list" id="wait-player-list"></ul>
+    </div>
+    <p style="font-size:0.85rem; color:#9ca3af; margin-top:16px;">
+      Playing as <strong id="my-name-display"></strong>
+    </p>
+  </div>
+</div>
+
+<!-- ── Countdown ─────────────────────────────────────────────────────────── -->
+<div id="countdown-screen" class="countdown-screen hidden">
+  <h2>Get Ready!</h2>
+  <div class="countdown-num" id="countdown-num">3</div>
+</div>
+
+<!-- ── Question Screen ───────────────────────────────────────────────────── -->
+<div id="question-screen" class="hidden">
+  <div class="question-screen" id="question-inner">
+    <div class="q-header">
+      <span class="q-progress" id="q-progress">Question 1 / 10</span>
+      <span class="q-category" id="q-category"></span>
+    </div>
+    <div class="timer-bar-wrap">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+    <p class="timer-secs" id="timer-secs">20s</p>
+
+    <!-- Answer result banner (hidden until answered) -->
+    <div id="result-banner" class="result-banner hidden"></div>
+
+    <p class="question-text" id="question-text"></p>
+    <div class="options-grid" id="options-grid"></div>
+  </div>
+</div>
+
+<!-- ── Answer Reveal Screen ──────────────────────────────────────────────── -->
+<div id="reveal-screen" class="center hidden">
+  <div class="card">
+    <p style="font-size:0.85rem; color:#6b7280; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">
+      Correct Answer
+    </p>
+    <p style="font-size:1.6rem; font-weight:800; margin-bottom:12px;" id="reveal-answer"></p>
+    <p style="font-size:1rem; color:#374151; margin-bottom:20px;" id="reveal-fastest"></p>
+
+    <h3 style="font-size:0.9rem; text-transform:uppercase; letter-spacing:1px; color:#6b7280; margin-bottom:10px;">
+      Scoreboard
+    </h3>
+    <ul class="scoreboard" id="player-scoreboard"></ul>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:16px;">Next question coming up…</p>
+  </div>
+</div>
+
+<!-- ── Game Over Screen ───────────────────────────────────────────────────── -->
+<div id="gameover-screen" class="center hidden">
+  <div class="card">
+    <div class="logo" style="margin-bottom:8px;">🍁</div>
+    <h2 class="section-title">Game Over!</h2>
+    <p style="color:#6b7280; margin-bottom:20px; font-size:1.1rem;" id="my-result-msg"></p>
+    <div class="podium-wrap" id="podium"></div>
+    <ul class="scoreboard" id="final-scoreboard"></ul>
+    <a href="play.html" class="btn btn-red mt-24">Play Again</a>
+    <a href="index.html" class="btn btn-outline mt-12">Home</a>
+  </div>
+</div>
+
+<!-- ── Host Left ──────────────────────────────────────────────────────────── -->
+<div id="host-left-screen" class="center hidden">
+  <div class="card">
+    <p style="font-size:3rem; margin-bottom:12px;">😢</p>
+    <h2 class="section-title">Host has left</h2>
+    <p style="color:#6b7280; margin-bottom:24px;">The game has ended.</p>
+    <a href="index.html" class="btn btn-red">Go Home</a>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let myName = '';
+let myScore = 0;
+let timerInterval = null;
+let timerSeconds = 20;
+let hasAnswered = false;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function show(id)  { document.getElementById(id).classList.remove('hidden'); }
+function hide(id)  { document.getElementById(id).classList.add('hidden'); }
+function showOnly(id) {
+  ['join-screen','waiting-screen','countdown-screen',
+   'question-screen','reveal-screen','gameover-screen','host-left-screen']
+    .forEach(s => s === id ? show(s) : hide(s));
+}
+
+function toast(msg, isError = false) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderScoreboard(containerId, scores) {
+  const ranks = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+  const ul = document.getElementById(containerId);
+  ul.innerHTML = scores.map((p, i) => `
+    <li ${p.name === myName ? 'style="outline:3px solid #D52B1E;"' : ''}>
+      <span class="rank">${ranks[i] || (i+1)}</span>
+      <span class="player-name-s">${escHtml(p.name)}${p.name === myName ? ' 👈' : ''}</span>
+      <span class="score-val">${p.score.toLocaleString()} pts</span>
+    </li>`).join('');
+}
+
+function startTimer(seconds) {
+  clearInterval(timerInterval);
+  timerSeconds = seconds;
+  const bar = document.getElementById('timer-bar');
+  const secs = document.getElementById('timer-secs');
+  bar.style.width = '100%';
+  bar.className = 'timer-bar';
+
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    const pct = Math.max(0, (timerSeconds / seconds) * 100);
+    bar.style.width = pct + '%';
+    secs.textContent = timerSeconds + 's';
+    if (timerSeconds <= 5) bar.className = 'timer-bar danger';
+    else if (timerSeconds <= 10) bar.className = 'timer-bar warning';
+    if (timerSeconds <= 0) clearInterval(timerInterval);
+  }, 1000);
+}
+
+// ── Join ─────────────────────────────────────────────────────────────────────
+function joinRoom() {
+  const code = document.getElementById('room-code').value.trim().toUpperCase();
+  const name = document.getElementById('player-name').value.trim();
+
+  if (!code || code.length < 4) return toast('Please enter a valid room code!', true);
+  if (!name) return toast('Please enter your name!', true);
+
+  socket.emit('joinRoom', { code, playerName: name }, (res) => {
+    if (res.error) return toast(res.error, true);
+    myName = res.playerName;
+    document.getElementById('my-name-display').textContent = myName;
+    document.getElementById('wait-code').textContent = res.code;
+    showOnly('waiting-screen');
+  });
+}
+
+// Allow Enter key to join
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const join = document.getElementById('join-screen');
+    if (!join.classList.contains('hidden')) joinRoom();
+  }
+});
+
+// ── Answer ────────────────────────────────────────────────────────────────────
+function submitAnswer(answer, btn) {
+  if (hasAnswered) return;
+  hasAnswered = true;
+  socket.emit('submitAnswer', { answer });
+
+  // Mark selected button, disable all
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (b === btn) b.classList.add('selected');
+  });
+}
+
+// ── Socket events ─────────────────────────────────────────────────────────────
+socket.on('lobbyUpdate', ({ players }) => {
+  const list = document.getElementById('wait-player-list');
+  list.innerHTML = players.map(p =>
+    `<li${p.name === myName ? ' style="background:#ffeeed;"' : ''}>${escHtml(p.name)}</li>`
+  ).join('');
+  document.getElementById('wait-player-count').textContent = players.length;
+});
+
+socket.on('gameStarting', () => {
+  showOnly('countdown-screen');
+  let n = 3;
+  document.getElementById('countdown-num').textContent = n;
+  const iv = setInterval(() => {
+    n--;
+    if (n <= 0) { clearInterval(iv); return; }
+    document.getElementById('countdown-num').textContent = n;
+  }, 1000);
+});
+
+socket.on('question', ({ questionIndex, total, question, options, category, timeLimit }) => {
+  hasAnswered = false;
+  showOnly('question-screen');
+  hide('result-banner');
+
+  document.getElementById('q-progress').textContent =
+    `Question ${questionIndex + 1} / ${total}`;
+  document.getElementById('q-category').textContent = category;
+  document.getElementById('question-text').textContent = question;
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = options.map(o => `
+    <button class="option-btn" onclick="submitAnswer(${JSON.stringify(o)}, this)">
+      ${escHtml(o)}
+    </button>`).join('');
+
+  startTimer(timeLimit / 1000);
+});
+
+socket.on('answerResult', ({ correct, fastest, points }) => {
+  clearInterval(timerInterval);
+  const banner = document.getElementById('result-banner');
+  banner.classList.remove('hidden','correct','wrong','fastest');
+
+  if (fastest) {
+    banner.classList.add('fastest');
+    banner.textContent = `⚡ You were FASTEST! +${points} points!`;
+    myScore += points;
+  } else if (correct) {
+    banner.classList.add('correct');
+    banner.textContent = `✅ Correct! +${points} points`;
+    myScore += points;
+  } else {
+    banner.classList.add('wrong');
+    banner.textContent = `❌ Wrong answer. Better luck next time!`;
+  }
+});
+
+socket.on('reveal', ({ correctAnswer, firstCorrect, scores }) => {
+  clearInterval(timerInterval);
+
+  // Highlight correct/wrong on question screen first, then show reveal
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    if (btn.textContent.trim() === correctAnswer) {
+      btn.classList.add('correct');
+    } else if (btn.classList.contains('selected')) {
+      btn.classList.add('wrong');
+    }
+  });
+
+  setTimeout(() => {
+    showOnly('reveal-screen');
+    document.getElementById('reveal-answer').textContent = correctAnswer;
+    document.getElementById('reveal-fastest').textContent = firstCorrect
+      ? `⚡ Fastest: ${escHtml(firstCorrect)}`
+      : 'No one answered correctly!';
+    renderScoreboard('player-scoreboard', scores);
+  }, 800);
+});
+
+socket.on('gameOver', ({ scores }) => {
+  showOnly('gameover-screen');
+  const myRank = scores.findIndex(p => p.name === myName) + 1;
+  const msgs = {
+    1: `🥇 Amazing! You won! You're Canada's top trivia champ!`,
+    2: `🥈 Great job! You came in 2nd place!`,
+    3: `🥉 Well done! You finished 3rd!`
+  };
+  document.getElementById('my-result-msg').textContent =
+    msgs[myRank] || `You finished in place ${myRank}. Great effort!`;
+
+  const podium = document.getElementById('podium');
+  const classes = ['first','second','third'];
+  const trophies = ['🥇','🥈','🥉'];
+  podium.innerHTML = scores.slice(0,3).map((p, i) => `
+    <div class="podium-item ${classes[i] || ''}">
+      <span class="trophy">${trophies[i] || ''}</span>
+      <span class="podium-name">${escHtml(p.name)}${p.name === myName ? ' 👈' : ''}</span>
+      <span class="podium-score">${p.score.toLocaleString()} pts</span>
+    </div>`).join('');
+
+  renderScoreboard('final-scoreboard', scores);
+});
+
+socket.on('hostLeft', () => showOnly('host-left-screen'));
+
+socket.on('connect_error', () => toast('Connection error. Please refresh.', true));
+</script>
+</body>
+</html>
