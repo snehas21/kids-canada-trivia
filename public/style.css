@@ -249,6 +249,9 @@ input[type="text"].code-input {
   width: 18px; height: 18px; flex-shrink: 0;
   accent-color: var(--red); cursor: pointer;
 }
+.radio-option.selected {
+  border-color: var(--red); background: #fff5f5;
+}
 .radio-option.correct {
   border-color: #22c55e; background: #f0fdf4; color: #15803d; font-weight: 700;
 }
