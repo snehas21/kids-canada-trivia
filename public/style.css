@@ -357,6 +357,40 @@ h2.section-title {
   50%       { transform: translateY(-10px); }
 }
 
+/* ── Question count selector ──────────────────────────────────────────────── */
+.q-count-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px; justify-content: center;
+}
+.q-count-label { font-size: 0.95rem; font-weight: 600; color: var(--gray); }
+.q-count-options { display: flex; gap: 8px; }
+.q-count-btn {
+  padding: 8px 18px; border-radius: 10px; border: 2.5px solid #e0e0e0;
+  background: var(--white); font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; color: var(--dark);
+}
+.q-count-btn.active {
+  background: var(--red); color: var(--white); border-color: var(--red);
+}
+.q-count-btn:hover:not(.active) { border-color: var(--red); color: var(--red); }
+
+/* ── End screen breakdown ─────────────────────────────────────────────────── */
+.end-breakdown {
+  text-align: left; max-height: 280px; overflow-y: auto;
+  border-radius: 10px; border: 1.5px solid #e5e7eb;
+}
+.breakdown-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 14px; font-size: 0.88rem; line-height: 1.4;
+  border-bottom: 1px solid #f1f5f9;
+}
+.breakdown-row:last-child { border-bottom: none; }
+.bd-correct { background: #f0fdf4; }
+.bd-wrong   { background: #fff7f7; }
+.bd-icon    { flex-shrink: 0; font-size: 1rem; }
+.bd-q       { flex: 1; color: var(--dark); }
+.bd-ans     { flex-shrink: 0; color: var(--red); font-weight: 700; font-size: 0.82rem; }
+
 @media (max-width: 480px) {
   .card { padding: 24px 20px; }
   .options-grid { grid-template-columns: 1fr; }
