@@ -44,7 +44,8 @@
 
     <p class="question-text" id="question-text"></p>
     <div class="options-list" id="options-grid"></div>
-    <button id="next-btn" class="btn btn-red hidden" style="margin-top:20px" onclick="nextQuestion()">Next Question →</button>
+    <button id="submit-btn" class="btn btn-dark hidden" style="margin-top:20px" onclick="lockInAnswer()">Lock In Answer ✓</button>
+    <button id="next-btn" class="btn btn-red hidden" style="margin-top:10px" onclick="nextQuestion()">Next Question →</button>
   </div>
 </div>
 
@@ -128,6 +129,7 @@ let playerName = '';
 let timerInterval = null;
 let timerSeconds = 20;
 let answered = false;
+let selectedAnswer = null;
 let results = []; // { question, correct, chosen, rightAnswer }
 let selectedCount = 10;
 
@@ -168,6 +170,7 @@ function startGame() {
 
 function showQuestion() {
   answered = false;
+  selectedAnswer = null;
   showOnly('question-screen');
   hide('result-banner');
 
@@ -178,6 +181,7 @@ function showQuestion() {
   document.getElementById('question-text').textContent = q.question;
 
   hide('next-btn');
+  hide('submit-btn');
   const grid = document.getElementById('options-grid');
   grid.innerHTML = q.options.map(o => `
     <label class="radio-option" data-value="${escHtml(o)}">
@@ -186,7 +190,13 @@ function showQuestion() {
     </label>`).join('');
   grid.onclick = e => {
     const lbl = e.target.closest('.radio-option');
-    if (lbl) submitAnswer(lbl.dataset.value);
+    if (!lbl || answered) return;
+    // Deselect all, then highlight chosen
+    grid.querySelectorAll('.radio-option').forEach(l => l.classList.remove('selected'));
+    lbl.classList.add('selected');
+    lbl.querySelector('input[type="radio"]').checked = true;
+    selectedAnswer = lbl.dataset.value;
+    show('submit-btn');
   };
 
   startTimer();
@@ -215,15 +225,25 @@ function startTimer() {
 }
 
 function timeUp() {
-  answered = true;
-  const q = questions[currentQ];
-  results.push({ question: q.question, correct: false, chosen: '(no answer)', rightAnswer: q.answer });
+  if (selectedAnswer) {
+    submitAnswer(selectedAnswer);
+  } else {
+    answered = true;
+    const q = questions[currentQ];
+    results.push({ question: q.question, correct: false, chosen: '(no answer)', rightAnswer: q.answer });
+    document.querySelectorAll('.radio-option').forEach(lbl => { lbl.style.pointerEvents = 'none'; });
+    document.querySelector(`.radio-option[data-value="${CSS.escape(q.answer)}"]`)?.classList.add('correct');
+    hide('submit-btn');
+    showBanner('⏰ Time\'s up! The answer was: ' + q.answer, 'wrong');
+    show('next-btn');
+  }
+}
 
-  document.querySelectorAll('.radio-option').forEach(lbl => { lbl.style.pointerEvents = 'none'; });
-  document.querySelector(`.radio-option[data-value="${CSS.escape(q.answer)}"]`)?.classList.add('correct');
-
-  showBanner('⏰ Time\'s up! The answer was: ' + q.answer, 'wrong');
-  show('next-btn');
+function lockInAnswer() {
+  if (selectedAnswer && !answered) {
+    clearInterval(timerInterval);
+    submitAnswer(selectedAnswer);
+  }
 }
 
 function submitAnswer(answer) {
@@ -237,10 +257,14 @@ function submitAnswer(answer) {
 
   results.push({ question: q.question, correct, chosen: answer, rightAnswer: q.answer });
 
-  document.querySelectorAll('.radio-option').forEach(lbl => { lbl.style.pointerEvents = 'none'; });
+  document.querySelectorAll('.radio-option').forEach(lbl => {
+    lbl.style.pointerEvents = 'none';
+    lbl.classList.remove('selected');
+  });
   document.querySelector(`.radio-option[data-value="${CSS.escape(q.answer)}"]`)?.classList.add('correct');
   if (!correct) document.querySelector(`.radio-option[data-value="${CSS.escape(answer)}"]`)?.classList.add('wrong');
 
+  hide('submit-btn');
   showBanner(correct ? '✅ Correct!' : '❌ Wrong! The answer was: ' + q.answer, correct ? 'correct' : 'wrong');
   show('next-btn');
 }
