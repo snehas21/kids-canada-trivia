@@ -178,7 +178,7 @@ function showQuestion() {
 
   const grid = document.getElementById('options-grid');
   grid.innerHTML = q.options.map(o => `
-    <button class="option-btn" onclick="submitAnswer(${JSON.stringify(o)}, this)">
+    <button class="option-btn" data-value="${escHtml(o)}" onclick="submitAnswer(${JSON.stringify(o)}, this)">
       ${escHtml(o)}
     </button>`).join('');
 
@@ -213,10 +213,9 @@ function timeUp() {
   results.push({ question: q.question, correct: false, chosen: '(no answer)', rightAnswer: q.answer });
 
   // Highlight correct answer
-  document.querySelectorAll('.option-btn').forEach(btn => {
-    btn.disabled = true;
-    if (btn.textContent.trim() === q.answer) btn.classList.add('correct');
-  });
+  const correctBtn = document.querySelector(`.option-btn[data-value="${CSS.escape(q.answer)}"]`);
+  document.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = true; });
+  correctBtn?.classList.add('correct');
 
   showBanner('⏰ Time\'s up! The answer was: ' + q.answer, 'wrong');
   setTimeout(nextQuestion, 2000);
@@ -234,11 +233,10 @@ function submitAnswer(answer, btn) {
   results.push({ question: q.question, correct, chosen: answer, rightAnswer: q.answer });
 
   // Disable all, mark correct/wrong
-  document.querySelectorAll('.option-btn').forEach(b => {
-    b.disabled = true;
-    if (b.textContent.trim() === q.answer) b.classList.add('correct');
-    else if (b === btn && !correct)        b.classList.add('wrong');
-  });
+  const correctBtn = document.querySelector(`.option-btn[data-value="${CSS.escape(q.answer)}"]`);
+  document.querySelectorAll('.option-btn').forEach(b => { b.disabled = true; });
+  correctBtn?.classList.add('correct');
+  if (!correct) btn.classList.add('wrong');
 
   if (correct) {
     showBanner('✅ Correct!', 'correct');
