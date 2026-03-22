@@ -1,1 +1,1 @@
-# trivia
+# kids-trivia
