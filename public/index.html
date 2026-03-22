@@ -8,17 +8,296 @@
 </head>
 <body>
 
-<!-- ── Landing ──────────────────────────────────────────────────────────── -->
-<div id="landing" class="center">
+<!-- ── Start Screen ───────────────────────────────────────────────────────── -->
+<div id="start-screen" class="center">
   <div class="card">
     <div class="logo">🍁 Canada <span>Trivia</span></div>
-    <p class="subtitle">Grade 5 Multiplayer Quiz Game</p>
-
-    <a href="host.html" class="btn btn-red">Host a Game</a>
-    <div class="divider">or</div>
-    <a href="play.html" class="btn btn-dark">Join a Game</a>
+    <p class="subtitle">Grade 5 Quiz Game</p>
+    <div class="input-group">
+      <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+    </div>
+    <div class="q-count-row">
+      <span class="q-count-label">Questions:</span>
+      <div class="q-count-options">
+        <button class="q-count-btn active" data-count="10">10</button>
+        <button class="q-count-btn" data-count="20">20</button>
+        <button class="q-count-btn" data-count="all">All</button>
+      </div>
+    </div>
+    <button class="btn btn-red" onclick="startGame()">Start Quiz!</button>
   </div>
 </div>
 
+<!-- ── Question Screen ────────────────────────────────────────────────────── -->
+<div id="question-screen" class="hidden">
+  <div class="question-screen" id="question-inner">
+    <div class="q-header">
+      <span class="q-progress" id="q-progress">Question 1 / 10</span>
+      <span class="q-category" id="q-category"></span>
+    </div>
+    <div class="timer-bar-wrap">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+    <p class="timer-secs" id="timer-secs">20s</p>
+
+    <div id="result-banner" class="result-banner hidden"></div>
+
+    <p class="question-text" id="question-text"></p>
+    <div class="options-grid" id="options-grid"></div>
+  </div>
+</div>
+
+<!-- ── End Screen ─────────────────────────────────────────────────────────── -->
+<div id="end-screen" class="center hidden">
+  <div class="card">
+    <div id="end-trophy" style="font-size:3.5rem; margin-bottom:8px;"></div>
+    <h2 class="section-title" id="end-title"></h2>
+    <p id="end-name" style="color:#6b7280; font-size:1rem; margin-bottom:6px;"></p>
+    <p id="end-score" style="font-size:2rem; font-weight:900; color:#D52B1E; margin-bottom:4px;"></p>
+    <p id="end-pct" style="color:#6b7280; font-size:1rem; margin-bottom:20px;"></p>
+    <div id="end-breakdown" class="end-breakdown"></div>
+    <button class="btn btn-red mt-24" onclick="restartGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  // Geography
+  { question: "What is the capital city of Canada?", options: ["Toronto","Ottawa","Montreal","Vancouver"], answer: "Ottawa", category: "Geography" },
+  { question: "How many provinces does Canada have?", options: ["8","9","10","13"], answer: "10", category: "Geography" },
+  { question: "How many territories does Canada have?", options: ["1","2","3","4"], answer: "3", category: "Geography" },
+  { question: "What is the largest province in Canada by area?", options: ["Ontario","British Columbia","Alberta","Quebec"], answer: "Quebec", category: "Geography" },
+  { question: "What ocean is on the east coast of Canada?", options: ["Pacific Ocean","Arctic Ocean","Atlantic Ocean","Indian Ocean"], answer: "Atlantic Ocean", category: "Geography" },
+  { question: "What ocean is on the west coast of Canada?", options: ["Pacific Ocean","Arctic Ocean","Atlantic Ocean","Indian Ocean"], answer: "Pacific Ocean", category: "Geography" },
+  { question: "What is the capital of British Columbia?", options: ["Vancouver","Victoria","Kelowna","Surrey"], answer: "Victoria", category: "Geography" },
+  { question: "What is the capital of Quebec?", options: ["Montreal","Quebec City","Laval","Gatineau"], answer: "Quebec City", category: "Geography" },
+  { question: "Which province is Niagara Falls located in?", options: ["Quebec","Manitoba","Ontario","Nova Scotia"], answer: "Ontario", category: "Geography" },
+  { question: "What is the longest river in Canada?", options: ["St. Lawrence River","Fraser River","Mackenzie River","Nelson River"], answer: "Mackenzie River", category: "Geography" },
+  { question: "What is the tallest mountain in Canada?", options: ["Mount Robson","Mount Logan","Mount Columbia","Mount Fairweather"], answer: "Mount Logan", category: "Geography" },
+  { question: "Which Canadian province is the smallest by area?", options: ["New Brunswick","Nova Scotia","Prince Edward Island","Newfoundland"], answer: "Prince Edward Island", category: "Geography" },
+  { question: "What large body of water sits between Ontario and the USA?", options: ["Hudson Bay","The Great Lakes","Lake Winnipeg","Georgian Bay"], answer: "The Great Lakes", category: "Geography" },
+  { question: "What is the capital of Alberta?", options: ["Calgary","Red Deer","Edmonton","Lethbridge"], answer: "Edmonton", category: "Geography" },
+  { question: "Which territory has its capital at Whitehorse?", options: ["Northwest Territories","Nunavut","Yukon","Manitoba"], answer: "Yukon", category: "Geography" },
+  { question: "Which Canadian city has the largest population?", options: ["Ottawa","Calgary","Montreal","Toronto"], answer: "Toronto", category: "Geography" },
+  { question: "What is the capital of Nunavut?", options: ["Yellowknife","Iqaluit","Whitehorse","Inuvik"], answer: "Iqaluit", category: "Geography" },
+  { question: "Which province is known as the Prairie Province because of its flat farmland?", options: ["Saskatchewan","Ontario","Nova Scotia","New Brunswick"], answer: "Saskatchewan", category: "Geography" },
+  { question: "Which Canadian province has the Rocky Mountains?", options: ["Ontario","Manitoba","Alberta and British Columbia","Quebec"], answer: "Alberta and British Columbia", category: "Geography" },
+  { question: "Which Canadian city is known as 'Lotusland'?", options: ["Victoria","Vancouver","Toronto","Halifax"], answer: "Vancouver", category: "Geography" },
+  // History & Culture
+  { question: "In what year did Canada become a country?", options: ["1776","1812","1867","1901"], answer: "1867", category: "History" },
+  { question: "What is Canada's national animal?", options: ["Moose","Polar Bear","Beaver","Canada Goose"], answer: "Beaver", category: "Culture" },
+  { question: "What are Canada's two official languages?", options: ["English and Spanish","French and Spanish","English and French","English and Indigenous"], answer: "English and French", category: "Culture" },
+  { question: "What is Canada's national bird?", options: ["Bald Eagle","Loon","Canada Goose","Blue Jay"], answer: "Loon", category: "Culture" },
+  { question: "What is the name of Canada's national police force?", options: ["RCMP","OPP","FBI","CSIS"], answer: "RCMP", category: "History" },
+  { question: "What day is Canada Day celebrated?", options: ["June 24","July 1","July 4","August 1"], answer: "July 1", category: "Culture" },
+  { question: "What sport is Canada's official summer sport?", options: ["Baseball","Soccer","Lacrosse","Basketball"], answer: "Lacrosse", category: "Culture" },
+  { question: "What is on the Canadian flag?", options: ["A beaver","A maple leaf","A moose","A hockey stick"], answer: "A maple leaf", category: "Culture" },
+  { question: "Who was the first Prime Minister of Canada?", options: ["Wilfrid Laurier","John A. Macdonald","Alexander Mackenzie","Pierre Trudeau"], answer: "John A. Macdonald", category: "History" },
+  { question: "What game was invented in Canada?", options: ["Football","Baseball","Basketball","Soccer"], answer: "Basketball", category: "History" },
+  { question: "What year did Canada host the Winter Olympics in Vancouver?", options: ["2006","2008","2010","2012"], answer: "2010", category: "History" },
+  { question: "What is the CN Tower located in?", options: ["Ottawa","Montreal","Calgary","Toronto"], answer: "Toronto", category: "Culture" },
+  { question: "Which Indigenous group is most associated with the Inuit art of carving?", options: ["Cree","Mohawk","Inuit","Haida"], answer: "Inuit", category: "Culture" },
+  { question: "What is the name of the train that crosses Canada coast to coast?", options: ["VIA Rail","GO Train","Rocky Mountaineer","Canadian National"], answer: "VIA Rail", category: "Culture" },
+  { question: "Who appears on the Canadian $10 bill?", options: ["Terry Fox","Viola Desmond","Tommy Douglas","Emily Carr"], answer: "Viola Desmond", category: "History" },
+  { question: "What is Canada's most popular winter sport?", options: ["Skiing","Curling","Snowboarding","Hockey"], answer: "Hockey", category: "Culture" },
+  { question: "What is Canada's motto 'A Mari Usque Ad Mare' translated to?", options: ["Strong and Free","From Sea to Sea","True North Strong","Unity in Diversity"], answer: "From Sea to Sea", category: "History" },
+  { question: "Which province joined Canada last (in 1949)?", options: ["Prince Edward Island","Manitoba","Newfoundland and Labrador","Saskatchewan"], answer: "Newfoundland and Labrador", category: "History" },
+  // Science & Nature
+  { question: "What are the Northern Lights also called?", options: ["Aurora Borealis","Aurora Australis","Solar Flares","Polar Lights"], answer: "Aurora Borealis", category: "Science" },
+  { question: "What tree's leaf is on the Canadian flag?", options: ["Oak","Birch","Maple","Pine"], answer: "Maple", category: "Nature" },
+  { question: "What is Canada's national flower?", options: ["Rose","Trillium","Dogwood","Wild Rose"], answer: "Trillium", category: "Nature" },
+  { question: "What large marine mammal lives in Canada's Arctic waters?", options: ["Walrus","Blue Whale","Narwhal","Beluga Whale"], answer: "Narwhal", category: "Nature" },
+  { question: "Which Canadian province is famous for its dinosaur fossils?", options: ["British Columbia","Manitoba","Alberta","Nova Scotia"], answer: "Alberta", category: "Science" },
+  { question: "What sweet food product is Canada famous for making from tree sap?", options: ["Honey","Maple Syrup","Molasses","Corn Syrup"], answer: "Maple Syrup", category: "Nature" },
+  { question: "What percentage of the world's freshwater does Canada have?", options: ["5%","10%","20%","30%"], answer: "20%", category: "Science" },
+  { question: "What is the name of Canada's space arm on the International Space Station?", options: ["CanadaArm","Canadarm2","SpaceArm","RoboCanada"], answer: "Canadarm2", category: "Science" },
+  // Fun & Misc
+  { question: "What popular Canadian coffee and donut chain is known as 'Timmies'?", options: ["Starbucks","Second Cup","Tim Hortons","Coffee Time"], answer: "Tim Hortons", category: "Culture" },
+  { question: "What is poutine made of?", options: ["Pasta, sauce and cheese","Fries, gravy and cheese curds","Rice, beans and salsa","Bread, butter and jam"], answer: "Fries, gravy and cheese curds", category: "Culture" },
+  { question: "Which province is poutine originally from?", options: ["Ontario","Nova Scotia","Quebec","Manitoba"], answer: "Quebec", category: "Culture" },
+  { question: "How many stars are on the Canadian flag?", options: ["0","1","5","13"], answer: "0", category: "Culture" },
+  { question: "What color are the stripes on the Canadian flag?", options: ["Blue","Red","Green","Gold"], answer: "Red", category: "Culture" }
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let questions = [];
+let currentQ = 0;
+let score = 0;
+let playerName = '';
+let timerInterval = null;
+let timerSeconds = 20;
+let answered = false;
+let results = []; // { question, correct, chosen, rightAnswer }
+let selectedCount = 10;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function showOnly(id) {
+  ['start-screen','question-screen','end-screen']
+    .forEach(s => s === id ? show(s) : hide(s));
+}
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Question count selector ───────────────────────────────────────────────────
+document.querySelectorAll('.q-count-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.q-count-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedCount = btn.dataset.count === 'all' ? ALL_QUESTIONS.length : parseInt(btn.dataset.count);
+  });
+});
+
+// ── Game flow ─────────────────────────────────────────────────────────────────
+function startGame() {
+  playerName = document.getElementById('player-name').value.trim() || 'Player';
+  questions = shuffle(ALL_QUESTIONS).slice(0, selectedCount);
+  currentQ = 0;
+  score = 0;
+  results = [];
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  showOnly('question-screen');
+  hide('result-banner');
+
+  const q = questions[currentQ];
+  document.getElementById('q-progress').textContent =
+    `Question ${currentQ + 1} / ${questions.length}`;
+  document.getElementById('q-category').textContent = q.category;
+  document.getElementById('question-text').textContent = q.question;
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = q.options.map(o => `
+    <button class="option-btn" onclick="submitAnswer(${JSON.stringify(o)}, this)">
+      ${escHtml(o)}
+    </button>`).join('');
+
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerSeconds = 20;
+  const bar = document.getElementById('timer-bar');
+  const secs = document.getElementById('timer-secs');
+  bar.style.width = '100%';
+  bar.className = 'timer-bar';
+
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    const pct = Math.max(0, (timerSeconds / 20) * 100);
+    bar.style.width = pct + '%';
+    secs.textContent = timerSeconds + 's';
+    if (timerSeconds <= 5)       bar.className = 'timer-bar danger';
+    else if (timerSeconds <= 10) bar.className = 'timer-bar warning';
+    if (timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      if (!answered) timeUp();
+    }
+  }, 1000);
+}
+
+function timeUp() {
+  answered = true;
+  const q = questions[currentQ];
+  results.push({ question: q.question, correct: false, chosen: '(no answer)', rightAnswer: q.answer });
+
+  // Highlight correct answer
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent.trim() === q.answer) btn.classList.add('correct');
+  });
+
+  showBanner('⏰ Time\'s up! The answer was: ' + q.answer, 'wrong');
+  setTimeout(nextQuestion, 2000);
+}
+
+function submitAnswer(answer, btn) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+
+  const q = questions[currentQ];
+  const correct = answer === q.answer;
+  if (correct) score++;
+
+  results.push({ question: q.question, correct, chosen: answer, rightAnswer: q.answer });
+
+  // Disable all, mark correct/wrong
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent.trim() === q.answer) b.classList.add('correct');
+    else if (b === btn && !correct)        b.classList.add('wrong');
+  });
+
+  if (correct) {
+    showBanner('✅ Correct!', 'correct');
+  } else {
+    showBanner('❌ Wrong! The answer was: ' + q.answer, 'wrong');
+  }
+
+  setTimeout(nextQuestion, 1800);
+}
+
+function showBanner(msg, type) {
+  const banner = document.getElementById('result-banner');
+  banner.className = 'result-banner ' + type;
+  banner.textContent = msg;
+  show('result-banner');
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ < questions.length) {
+    showQuestion();
+  } else {
+    showEndScreen();
+  }
+}
+
+// ── End screen ────────────────────────────────────────────────────────────────
+function showEndScreen() {
+  showOnly('end-screen');
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+
+  let trophy, title;
+  if (pct === 100)     { trophy = '🏆'; title = 'Perfect Score!'; }
+  else if (pct >= 80)  { trophy = '🥇'; title = 'Outstanding!'; }
+  else if (pct >= 60)  { trophy = '🥈'; title = 'Great Job!'; }
+  else if (pct >= 40)  { trophy = '🥉'; title = 'Good Effort!'; }
+  else                 { trophy = '📚'; title = 'Keep Studying!'; }
+
+  document.getElementById('end-trophy').textContent = trophy;
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-name').textContent = playerName;
+  document.getElementById('end-score').textContent = `${score} / ${total}`;
+  document.getElementById('end-pct').textContent = `${pct}% correct`;
+
+  // Breakdown
+  const breakdown = document.getElementById('end-breakdown');
+  breakdown.innerHTML = results.map(r => `
+    <div class="breakdown-row ${r.correct ? 'bd-correct' : 'bd-wrong'}">
+      <span class="bd-icon">${r.correct ? '✅' : '❌'}</span>
+      <span class="bd-q">${escHtml(r.question)}</span>
+      ${!r.correct ? `<span class="bd-ans">→ ${escHtml(r.rightAnswer)}</span>` : ''}
+    </div>`).join('');
+}
+
+function restartGame() {
+  document.getElementById('player-name').value = playerName;
+  showOnly('start-screen');
+}
+</script>
 </body>
 </html>
