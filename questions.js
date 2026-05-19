@@ -314,6 +314,117 @@ const questions = [
     options: ["CanadaArm", "Canadarm2", "SpaceArm", "RoboCanada"],
     answer: "Canadarm2",
     category: "Science"
+  },
+  // More Geography
+  {
+    question: "What is the capital of Manitoba?",
+    options: ["Brandon", "Winnipeg", "Steinbach", "Thompson"],
+    answer: "Winnipeg",
+    category: "Geography"
+  },
+  {
+    question: "What is the capital of Nova Scotia?",
+    options: ["Truro", "Dartmouth", "Halifax", "Sydney"],
+    answer: "Halifax",
+    category: "Geography"
+  },
+  {
+    question: "What is the capital of Saskatchewan?",
+    options: ["Saskatoon", "Regina", "Moose Jaw", "Prince Albert"],
+    answer: "Regina",
+    category: "Geography"
+  },
+  {
+    question: "Which province is known as 'La Belle Province' (The Beautiful Province)?",
+    options: ["Ontario", "British Columbia", "Quebec", "New Brunswick"],
+    answer: "Quebec",
+    category: "Geography"
+  },
+  {
+    question: "What is the name of the large bay on the north side of Ontario and Quebec?",
+    options: ["Baffin Bay", "Hudson Bay", "James Bay", "Georgian Bay"],
+    answer: "Hudson Bay",
+    category: "Geography"
+  },
+  {
+    question: "Which province has the Bay of Fundy, famous for the world's highest tides?",
+    options: ["Prince Edward Island", "Nova Scotia", "New Brunswick", "Newfoundland"],
+    answer: "New Brunswick",
+    category: "Geography"
+  },
+  {
+    question: "What is Canada's second largest city by population?",
+    options: ["Ottawa", "Vancouver", "Calgary", "Montreal"],
+    answer: "Montreal",
+    category: "Geography"
+  },
+  // More History & Culture
+  {
+    question: "What year did the Canadian Pacific Railway link Canada coast to coast?",
+    options: ["1867", "1885", "1901", "1920"],
+    answer: "1885",
+    category: "History"
+  },
+  {
+    question: "What Canadian city hosted the 1976 Summer Olympics?",
+    options: ["Toronto", "Vancouver", "Montreal", "Calgary"],
+    answer: "Montreal",
+    category: "History"
+  },
+  {
+    question: "What is the name of the brave Canadian runner who ran across Canada to raise money for cancer research?",
+    options: ["Steve Fonyo", "Rick Hansen", "Terry Fox", "Ben Johnson"],
+    answer: "Terry Fox",
+    category: "History"
+  },
+  {
+    question: "What is a 'toonie'?",
+    options: ["A Canadian $1 coin", "A Canadian $2 coin", "A Canadian cartoon character", "A type of Canadian donut"],
+    answer: "A Canadian $2 coin",
+    category: "Culture"
+  },
+  {
+    question: "What bird is on the Canadian one-dollar coin (the 'loonie')?",
+    options: ["Canada Goose", "Bald Eagle", "Common Loon", "Blue Jay"],
+    answer: "Common Loon",
+    category: "Culture"
+  },
+  {
+    question: "Which famous annual rodeo and festival is held in Calgary every July?",
+    options: ["The Calgary Stampede", "The Wild West Rodeo", "The Prairie Festival", "The Alberta Fair"],
+    answer: "The Calgary Stampede",
+    category: "Culture"
+  },
+  {
+    question: "What is Canada's official winter sport?",
+    options: ["Skiing", "Curling", "Snowshoeing", "Ice Hockey"],
+    answer: "Ice Hockey",
+    category: "Culture"
+  },
+  // More Science & Nature
+  {
+    question: "What famous national park in Alberta is known for its turquoise lakes and mountain scenery?",
+    options: ["Jasper National Park", "Banff National Park", "Yoho National Park", "Kootenay National Park"],
+    answer: "Banff National Park",
+    category: "Nature"
+  },
+  {
+    question: "What animal is on the Canadian 25-cent coin (quarter)?",
+    options: ["Beaver", "Moose", "Caribou", "Bear"],
+    answer: "Caribou",
+    category: "Nature"
+  },
+  {
+    question: "What is the name of the large Arctic territory created in 1999 as a homeland for the Inuit people?",
+    options: ["Yukon", "Northwest Territories", "Nunavut", "Labrador"],
+    answer: "Nunavut",
+    category: "History"
+  },
+  {
+    question: "Which Canadian province produces the most maple syrup in the world?",
+    options: ["Ontario", "New Brunswick", "Quebec", "Nova Scotia"],
+    answer: "Quebec",
+    category: "Nature"
   }
 ];
 
